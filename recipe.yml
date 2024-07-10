@@ -1,18 +1,17 @@
-name: Custom Vanilla Desktop # Replace this name with your image name
-id: custom # Replace this ID with your image ID
+name: T2 Vanilla Desktop # Replace this name with your image name
+id: t2-vanilla-desktop # Replace this ID with your image ID
 stages:
 - id: build
   base: ghcr.io/vanilla-os/desktop:main # Optionally, Replace this image URL with a different one i.e. nvidia:main, etc
   singlelayer: false
   labels:
-    maintainer: self-maintained # Optionally, Replace this with your name
+    maintainer: Kansei # Optionally, Replace this with your name
   args:
     DEBIAN_FRONTEND: noninteractive # Set the image environment as non-interactive
   
   # Commands to run first before building the modules
   runs:
   - echo 'APT::Install-Recommends "1";' > /etc/apt/apt.conf.d/01norecommends
-
   modules:
   - name: init-setup
     type: shell
@@ -28,17 +27,35 @@ stages:
       packages:
       - vim
 
-  - name: example-commands # Sample module demonstrating the Shell module with custom commands
+  - name: T2-commands # Sample module demonstrating the Shell module with custom commands
     type: shell
     commands:
-    - echo Example output
+    - curl -s --compressed "https://adityagarg8.github.io/t2-ubuntu-repo/KEY.gpg" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/t2-ubuntu-repo.gpg >/dev/null
+    - sudo curl -s --compressed -o /etc/apt/sources.list.d/t2.list "https://adityagarg8.github.io/t2-ubuntu-repo/t2.list"
+    - echo "deb [signed-by=/etc/apt/trusted.gpg.d/t2-ubuntu-repo.gpg] https://github.com/AdityaGarg8/t2-ubuntu-repo/releases/download/sid/" | sudo tee -a /etc/apt/sources.list.d/t2.list
+    - sudo apt update
 
-  - name: example-modules # Sample module demonstrating importing local and remote modules
-    type: includes
-    includes:
-      - modules/50-install-debs.yml # Sample local module present in this repository
-      - gh:vanilla-os/dev-image:main:modules/00-basics.yml # Sample GitHub remote module in the format: `gh:your-name/your-repo:branch:modules/file.yml`
-      - https://raw.githubusercontent.com/Vanilla-OS/dev-image/main/modules/05-go.yml # Sample full URL remote module
+  - name: t2-packages # Sample module using the built-in Apt module to install packages
+    type: apt
+    source:
+      packages:
+      - linux-t2
+      - apple-t2-audio-config
+      - tiny-dfr
+      - apple-firmware-script
+      - t2fanrd
+
+  - name: T2-wifi # Sample module demonstrating the Shell module with custom commands
+    type: shell
+    commands:
+    - get-wifi-firmware
+
+    - name: example-modules # Sample module demonstrating importing local and remote modules
+      type: includes
+      includes:
+        - modules/50-install-debs.yml # Sample local module present in this repository
+        - gh:vanilla-os/dev-image:main:modules/00-basics.yml # Sample GitHub remote module in the format: `gh:your-name/your-repo:branch:modules/file.yml`
+        - https://raw.githubusercontent.com/Vanilla-OS/dev-image/main/modules/05-go.yml # Sample full URL remote module
 
   # Put your custom actions before this comment
 
